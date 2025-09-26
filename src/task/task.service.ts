@@ -19,10 +19,13 @@ export class TaskService {
     return task;
   }
   create(dto: CreateTaskDto) {
-    const { title } = dto;
+    const { title, description, priority, tags } = dto;
     const newTask = {
       id: this.tasks.length + 1,
       title,
+      description,
+      priority,
+      tags,
       isCompleted: false,
     };
     this.tasks.push(newTask);
