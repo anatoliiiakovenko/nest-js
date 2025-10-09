@@ -8,7 +8,7 @@ export class ActorController {
   constructor(private readonly actorService: ActorService) {}
 
   @Post()
-  create(@Body() dto: CreateActorDto): Promise<ActorEntity> {
+  create(@Body() dto: CreateActorDto) {
     return this.actorService.create(dto);
   }
 }
