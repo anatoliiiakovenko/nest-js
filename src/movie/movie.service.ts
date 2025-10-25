@@ -1,27 +1,36 @@
-import { Injectable } from '@nestjs/common';
-// import { MovieDto } from './dto/movie.dto';
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { PrismaService } from '../prisma/prisma.service';
+import { MovieDto } from './dto/movie.dto';
+import { Movie, MoviePoster } from '../../generated/prisma/index';
+
 // import { ActorEntity } from '../actor/entities/actor.entity';
 // import { MoviePosterEntity } from './entities/poster.entity';
 
 @Injectable()
 export class MovieService {
-  // constructor(
-  //   @InjectRepository(MovieEntity)
-  //   private readonly movieRepository: Repository<MovieEntity>,
-  //   @InjectRepository(MoviePosterEntity)
-  //   private readonly posterRepository: Repository<MoviePosterEntity>,
-  //   @InjectRepository(ActorEntity)
-  //   private readonly actorRepository: Repository<ActorEntity>,
-  // ) {}
-  //
-  // async findAll(): Promise<MovieEntity[]> {
-  //   return await this.movieRepository.find({
-  //     order: {
-  //       createdAt: 'desc',
-  //     },
-  //   });
-  // }
-  //
+  constructor(private readonly prismaService: PrismaService) {}
+
+  async findAll() {
+    return this.prismaService.movie.findMany({
+      where: {
+        isAvailable: true,
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+      select: {
+        id: true,
+        title: true,
+        actors: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+      },
+    });
+  }
+
   // async findById(id: string): Promise<MovieEntity> {
   //   const movie = await this.movieRepository.findOne({
   //     where: { id },
@@ -32,33 +41,24 @@ export class MovieService {
   //   return movie;
   // }
   //
-  // async create(dto: MovieDto): Promise<MovieEntity> {
-  //   const { title, releaseYear, imageUrl, actorIds } = dto;
-  //
-  //   const actors = await this.actorRepository.find({
-  //     where: { id: In(actorIds ?? []) },
-  //   });
-  //
-  //   if (!actors || !actors.length)
-  //     throw new NotFoundException('One or more actors not found');
-  //
-  //   let poster: MoviePosterEntity | null = null;
-  //
-  //   if (imageUrl) {
-  //     poster = this.posterRepository.create({
-  //       url: imageUrl,
-  //     });
-  //     await this.posterRepository.save(poster);
-  //   }
-  //
-  //   const movie = this.movieRepository.create({
-  //     title,
-  //     releaseYear,
-  //     poster,
-  //     actors,
-  //   });
-  //   return await this.movieRepository.save(movie);
-  // }
+  async create(dto: MovieDto): Promise<Movie> {
+    const { title, releaseYear, imageUrl, actorIds } = dto;
+
+    const actors = await this.prismaService.actor.findMany({
+      where: { id: { in: actorIds } },
+    });
+
+    if (!actors || !actors.length)
+      throw new NotFoundException('One or more actors not found');
+
+    const movie = this.movieRepository.create({
+      title,
+      releaseYear,
+      poster,
+      actors,
+    });
+    return await this.movieRepository.save(movie);
+  }
   //
   // async update(id: string, dto: MovieDto): Promise<boolean> {
   //   const movie = await this.findById(id);
